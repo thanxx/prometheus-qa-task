@@ -1,8 +1,8 @@
-APP=$(shell basename $(shell git remote get-url origin))
-REGISTRY=thanxx
-VERSION=$(shell git describe --tags --abbrev=0)-$(shell git rev-parse --short HEAD)
+APP=qa-task
+REGISTRY=ghcr.io/thanxx
+VERSION=v0.0.1
 TARGETOS=linux
-TARGETARCH=arm64
+TARGETARCH=amd64
 TAG=${REGISTRY}/${APP}:${VERSION}-${TARGETARCH}
 
 format:
@@ -15,26 +15,23 @@ test:
 	go test -v
 
 image:
-	docker build . -t ${TAG}
+	docker build . -t ${TAG} --no-cache
 
 push:
 	docker push ${TAG}
 
 build: format
 	go get
-	CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -v -o kbot -ldflags "-X="kbot/cmd.appVersion=${VERSION}
+	CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -v -o app -ldflags "-X="kbot/cmd.appVersion=${VERSION}
 
-linux:
+linux: 
 	build
 
 macos:
-	TARGETOS=macos
-	build
+	$(MAKE) build TARGETOS=darwin
 
-windows:
-	TARGETOS=windows
-	build
-
+windows: 
+	$(MAKE) build TARGETOS=windows 
 
 clean:
-	rm -rf kbot
+	docker rmi ${TAG}
